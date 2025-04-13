@@ -18,7 +18,9 @@ A comprehensive task list for implementing the full-stack translation applicatio
   - [ ] Install .NET 9 SDK and runtime
   - [ ] Set up Node.js environment for Electron/Vue development
   - [ ] Configure VS Code with recommended extensions
-  - [ ] Install necessary development tools (Docker, SQL Server)
+  - [ ] Install MongoDB Community Edition
+  - [ ] Install MongoDB Compass for database management
+  - [ ] Configure MongoDB development instance
 
 ## Future Tasks
 
@@ -27,38 +29,29 @@ A comprehensive task list for implementing the full-stack translation applicatio
   - [ ] Initialize API project with appropriate project structure
   - [ ] Set up dependency injection and configuration
   - [ ] Add initial controller structure
-- [ ] Implement PDF to DOC/DOCX conversion API
-  - [ ] Research and integrate PDF library for .NET
-  - [ ] Create document conversion service
-  - [ ] Implement file format detection
-- [ ] Integrate Tesseract OCR for PDF processing
-  - [ ] Set up Tesseract library integration
-  - [ ] Create OCR processing service
-  - [ ] Implement text extraction pipeline
-- [ ] Develop API endpoints for file management
-  - [ ] Create upload/download endpoints
-  - [ ] Implement file storage service
-  - [ ] Add file metadata handling
+  - [ ] Configure MongoDB connection and settings
+  - [ ] Set up MongoDB repositories pattern
+- [ ] Set up database infrastructure
+  - [ ] Design MongoDB document schemas
+  - [ ] Create MongoDB collections and indexes
+  - [ ] Configure GridFS for file storage
+  - [ ] Implement repository interfaces
+  - [ ] Set up MongoDB change streams for real-time updates
 - [ ] Implement translation memory storage and retrieval
-  - [ ] Design database schema for translation segments
-  - [ ] Create repository layer for data access
-  - [ ] Implement fuzzy matching algorithm
+  - [ ] Design translation memory document schema
+  - [ ] Create MongoDB text indexes for search
+  - [ ] Implement fuzzy matching using MongoDB text search
+  - [ ] Add caching layer for frequent queries
 - [ ] Create authentication and user management
-  - [ ] Set up user authentication service
+  - [ ] Set up user document schema
   - [ ] Implement JWT token handling
   - [ ] Create user management endpoints
-- [ ] Set up database for storing translation memory and user data
-  - [ ] Design database schema
-  - [ ] Configure Entity Framework Core
-  - [ ] Create database migrations
-- [ ] Implement file annotation storage system
-  - [ ] Design annotation data model
-  - [ ] Create annotation service
-  - [ ] Implement annotation storage and retrieval
-- [ ] Add redaction functionality API
-  - [ ] Design redaction model
-  - [ ] Create redaction service
-  - [ ] Implement PDF redaction processing
+  - [ ] Configure MongoDB user authentication
+- [ ] Implement file storage system
+  - [ ] Set up GridFS for document storage
+  - [ ] Create file metadata schema
+  - [ ] Implement versioning system
+  - [ ] Add file chunking and streaming
 
 ### Frontend (Electron.js with Vue.js)
 - [ ] Set up Electron.js project with Vue.js
@@ -107,18 +100,12 @@ A comprehensive task list for implementing the full-stack translation applicatio
   - [ ] Implement API service
   - [ ] Add authentication flow
   - [ ] Create error handling
+  - [ ] Configure MongoDB change streams for real-time updates
 - [ ] Implement file synchronization between components
-  - [ ] Design synchronization protocol
+  - [ ] Design synchronization protocol using MongoDB change streams
   - [ ] Implement change tracking
   - [ ] Add conflict resolution
-- [ ] Create real-time translation preview updates
-  - [ ] Implement change detection
-  - [ ] Create update pipeline
-  - [ ] Optimize performance
-- [ ] Integrate translation memory suggestions
-  - [ ] Implement suggestion display
-  - [ ] Add suggestion acceptance mechanism
-  - [ ] Create feedback loop for improving suggestions
+  - [ ] Set up GridFS streaming
 
 ### Testing
 - [ ] Create unit tests for backend services
@@ -147,8 +134,9 @@ A comprehensive task list for implementing the full-stack translation applicatio
 ### Phase 1: Foundation (Weeks 1-3)
 - Complete project setup
 - Establish development environment
+- Set up MongoDB infrastructure
 - Create basic project structure
-- Set up communication between frontend and backend
+- Configure MongoDB connections and repositories
 
 ### Phase 2: Core Functionality (Weeks 4-8)
 - Implement PDF processing

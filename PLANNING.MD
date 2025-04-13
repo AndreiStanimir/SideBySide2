@@ -52,8 +52,8 @@ The application follows a three-tier architecture:
 ### Backend
 - C# .NET 9
 - Tesseract OCR
-- SQL Server or PostgreSQL
-- Entity Framework Core
+- MongoDB with MongoDB.Driver
+- MongoDB GridFS for file storage
 - ASP.NET Core Web API
 
 ### Frontend
@@ -71,9 +71,11 @@ The application follows a three-tier architecture:
   - `/Controllers/` - API endpoints
   - `/Services/` - Business logic
   - `/Models/` - Data models
-  - `/Data/` - Database context
+  - `/Data/` - MongoDB context and repositories
   - `/Middleware/` - Custom middleware components
   - `/Config/` - Configuration files
+  - `/Repositories/` - MongoDB repositories
+  - `/Schemas/` - MongoDB document schemas
 
 ### Frontend
 - `/Frontend/` - Electron application root
@@ -111,7 +113,7 @@ The application follows a three-tier architecture:
 ## Development Workflow
 
 ### Local Development
-1. Set up local development environment
+1. Set up local development environment with MongoDB
 2. Run backend API locally
 3. Run Electron app in development mode
 4. Use hot reloading for frontend changes
@@ -133,9 +135,10 @@ The application follows a three-tier architecture:
 
 - PDF rendering must be efficient and responsive
 - OCR processing should be performed asynchronously
-- Translation memory lookups need to be fast
+- Translation memory lookups optimized with MongoDB indexes
 - UI must remain responsive during backend operations
-- Consider offline capability for basic functionality
+- Consider offline capability with local MongoDB cache
+- Use MongoDB change streams for real-time updates
 
 ## Security Requirements
 
@@ -152,4 +155,25 @@ The application follows a three-tier architecture:
 - Collaborative translation features
 - Extended file format support
 - Mobile companion application
-- Translation memory sharing 
+- Translation memory sharing
+
+## Data Architecture
+
+### MongoDB Collections
+- `users` - User profiles and authentication data
+- `translationMemory` - Translation segments and metadata
+- `documents` - Document metadata and processing status
+- `annotations` - Document annotations and redactions
+- `settings` - User preferences and application settings
+
+### GridFS Usage
+- Store original PDF documents
+- Manage processed document versions
+- Handle large binary files efficiently
+- Enable document versioning and tracking
+
+### Indexing Strategy
+- Text indexes for translation memory search
+- Compound indexes for efficient querying
+- Geospatial indexes for language-specific searches
+- TTL indexes for temporary data management 
