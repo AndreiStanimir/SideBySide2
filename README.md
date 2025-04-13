@@ -1,3 +1,160 @@
+# Side-by-Side Translator Application
+
+A comprehensive translation tool built with Electron.js, Vue.js, and C# .NET 9, designed to assist translators with document translation, redaction, annotation, and other document processing tasks.
+
+## Features
+
+- **Three-column Layout**: Original PDF, translation memory, and translated preview
+- **PDF Processing**: View, edit, annotate, and redact PDF documents
+- **OCR**: Extract text from scanned documents and images
+- **Translation Memory**: Store and reuse previous translations
+- **Export Options**: Generate translated documents in various formats
+- **Docker Support**: Containerized services for consistent development and deployment
+
+## Architecture
+
+The application uses a three-tier architecture:
+1. **UI Layer**: Electron.js application with Vue.js
+2. **Business Logic Layer**: C# .NET 9 backend API services
+3. **Data Layer**: MongoDB for persistent storage
+
+All backend services are containerized using Docker for consistent development and deployment.
+
+### Docker Infrastructure
+```
+┌─────────────────────────────────┐
+│      Electron Desktop Shell     │
+│         (Host Machine)          │
+├─────────┬─────────┬─────────────┤
+│  PDF    │   TM    │ Translated  │
+│ Viewer  │ Lookup  │  Preview    │
+├─────────┴─────────┴─────────────┤
+│        API Communication        │
+└───────────────┬─────────────────┘
+                │
+┌───────────────▼─────────────────┐
+│        Docker Network           │
+├─────────────────────────────────┤
+│ ┌─────────┐  ┌───────────────┐  │
+│ │  API    │  │    MongoDB    │  │
+│ │Container│  │   Container   │  │
+│ └─────────┘  └───────────────┘  │
+│ ┌─────────┐  ┌───────────────┐  │
+│ │Tesseract│  │    Redis      │  │
+│ │Container│  │   Container   │  │
+│ └─────────┘  └───────────────┘  │
+└─────────────────────────────────┘
+```
+
+## Prerequisites
+
+- **.NET 9 SDK and Runtime**
+- **Node.js and NPM** for Electron/Vue development
+- **Docker and Docker Compose** for containerized services
+- **Git** for version control
+
+## Getting Started
+
+### Setting Up the Development Environment
+
+1. **Clone the repository**
+   ```bash
+   git clone https://github.com/yourusername/SideBySide2.git
+   cd SideBySide2
+   ```
+
+2. **Start the backend services with Docker**
+   ```bash
+   docker-compose up -d
+   ```
+
+3. **Setup the Frontend (Electron/Vue)**
+   ```bash
+   cd Frontend
+   npm install
+   npm run dev
+   ```
+
+### Project Structure
+
+```
+SideBySide2/
+├── Backend/
+│   └── SideBySideAPI/          # .NET 9 API project
+│       ├── Controllers/        # API endpoints
+│       ├── Services/           # Business logic
+│       ├── Models/             # Data models
+│       ├── Data/               # MongoDB context
+│       └── Dockerfile          # API container definition
+├── Frontend/                   # Electron.js with Vue.js
+│   ├── src/                    # Vue source code
+│   │   ├── components/         # Vue components
+│   │   ├── views/              # Vue views
+│   │   └── services/           # API integration
+│   └── electron.js             # Electron main process
+├── Tesseract/                  # OCR service
+│   ├── ocr_processing.py       # OCR script
+│   └── Dockerfile              # Tesseract container definition
+├── docker-compose.yml          # Docker services config
+├── .dockerignore               # Docker ignore rules
+├── .gitignore                  # Git ignore rules
+├── PLANNING.MD                 # Project planning document
+└── TASK.md                     # Task tracking
+```
+
+## Development Workflow
+
+1. **Check PLANNING.MD** for project architecture and vision
+2. **Review TASK.md** for current tasks and priorities
+3. **Use Docker Compose** to manage backend services
+4. **Run the Electron app** in development mode
+
+## Docker Services
+
+- **API**: .NET 9 REST API service (port 5000)
+- **MongoDB**: Database for translation memory (port 27017)
+- **Redis**: Caching service (port 6379)
+- **Tesseract**: OCR processing service
+
+## Building and Deployment
+
+### Building the Electron App
+
+```bash
+cd Frontend
+npm run build
+```
+
+### Running Tests
+
+```bash
+# Backend tests
+cd Backend/SideBySideAPI
+dotnet test
+
+# Frontend tests
+cd Frontend
+npm run test
+```
+
+### Creating an Installer
+
+```bash
+cd Frontend
+npm run make
+```
+
+## Contributing
+
+1. Check TASK.md for current priorities
+2. Create a feature branch from the main branch
+3. Implement changes and test them locally
+4. Update documentation if necessary
+5. Submit a pull request
+
+## License
+
+This project is licensed under the MIT License - see the LICENSE file for details.
 
 ### Lista de tehnologii
 
