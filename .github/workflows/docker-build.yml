@@ -1,0 +1,66 @@
+name: Docker Build and Push
+
+on:
+  push:
+    branches: [ main ]
+    tags: [ 'v*' ]
+  workflow_dispatch:
+
+env:
+  REGISTRY: ghcr.io
+  API_IMAGE_NAME: ${{ github.repository }}/sidebyside-api
+  OCR_IMAGE_NAME: ${{ github.repository }}/sidebyside-ocrmypdf
+
+jobs:
+  build-and-push:
+    runs-on: ubuntu-latest
+    permissions:
+      contents: read
+      packages: write
+
+    steps:
+      - name: Checkout repository
+        uses: actions/checkout@v3
+
+      - name: Log in to the Container registry
+        uses: docker/login-action@v2
+        with:
+          registry: ${{ env.REGISTRY }}
+          username: ${{ github.actor }}
+          password: ${{ secrets.GITHUB_TOKEN }}
+
+      - name: Extract metadata for .NET API
+        id: meta-api
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.API_IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=ref,event=branch
+            type=sha,format=short
+
+      - name: Build and push .NET API image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./Backend/SideBySideAPI
+          push: true
+          tags: ${{ steps.meta-api.outputs.tags }}
+          labels: ${{ steps.meta-api.outputs.labels }}
+
+      - name: Extract metadata for OCRmyPDF
+        id: meta-ocr
+        uses: docker/metadata-action@v4
+        with:
+          images: ${{ env.REGISTRY }}/${{ env.OCR_IMAGE_NAME }}
+          tags: |
+            type=semver,pattern={{version}}
+            type=ref,event=branch
+            type=sha,format=short
+
+      - name: Build and push OCRmyPDF image
+        uses: docker/build-push-action@v4
+        with:
+          context: ./Tesseract
+          push: true
+          tags: ${{ steps.meta-ocr.outputs.tags }}
+          labels: ${{ steps.meta-ocr.outputs.labels }} 

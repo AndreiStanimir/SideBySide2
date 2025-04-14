@@ -1,0 +1,74 @@
+name: CI
+
+on:
+  push:
+    branches: [ main ]
+  pull_request:
+    branches: [ main ]
+
+jobs:
+  backend-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup .NET
+      uses: actions/setup-dotnet@v3
+      with:
+        dotnet-version: '9.0.x'
+        
+    - name: Restore dependencies
+      run: dotnet restore Backend/SideBySideAPI/SideBySideAPI.csproj
+      
+    - name: Build
+      run: dotnet build Backend/SideBySideAPI/SideBySideAPI.csproj --no-restore
+      
+    # Uncomment when tests are added
+    # - name: Test
+    #   run: dotnet test Backend/SideBySideAPI --no-build --verbosity normal
+  
+  frontend-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: Frontend/package-lock.json
+        
+    - name: Install dependencies
+      run: cd Frontend && npm ci
+      
+    # Uncomment when tests are added
+    # - name: Run tests
+    #   run: cd Frontend && npm test
+  
+  tesseract-tests:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Run OCRmyPDF tests
+      run: cd Tesseract && bash test_ocrmypdf.sh
+      
+  linting:
+    runs-on: ubuntu-latest
+    
+    steps:
+    - uses: actions/checkout@v3
+    
+    - name: Setup Node.js
+      uses: actions/setup-node@v3
+      with:
+        node-version: 18
+        cache: 'npm'
+        cache-dependency-path: Frontend/package-lock.json
+        
+    - name: Lint Frontend
+      run: cd Frontend && npm ci && npm run lint 

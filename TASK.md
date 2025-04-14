@@ -15,6 +15,12 @@ A comprehensive task list for implementing the full-stack translation applicatio
     - [x] Add docker-compose.yml for development
     - [x] Create Dockerfiles for services
     - [x] Configure Docker networking
+- [x] Set up GitHub Actions workflows (2023-05-25)
+  - [x] Create CI workflow for testing
+  - [x] Set up Docker image build and push workflow
+  - [x] Configure deployment workflow to free hosting service
+  - [x] Add docker-compose validation workflow
+  - [x] Create documentation for GitHub Actions workflows
 
 ## In Progress Tasks
 
