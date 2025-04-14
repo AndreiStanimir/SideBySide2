@@ -4,13 +4,15 @@
   "description": "A comprehensive translation tool with document processing capabilities",
   "main": "electron.js",
   "scripts": {
-    "dev": "electron-vite dev",
+    "dev": "cross-env NODE_ENV=development VITE_DEV_SERVER_PORT=5173 electron-vite dev",
+    "dev:web": "vite",
     "build": "electron-vite build",
     "preview": "electron-vite preview",
     "make": "electron-vite build && electron-builder",
     "publish": "electron-vite build && electron-builder --publish always",
     "lint": "eslint . --ext .vue,.js,.jsx,.cjs,.mjs --fix --ignore-path .gitignore",
-    "format": "prettier --write src/"
+    "format": "prettier --write src/",
+    "clean": "node ./clear-cache.js"
   },
   "keywords": [
     "translation",

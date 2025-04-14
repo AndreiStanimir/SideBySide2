@@ -29,13 +29,29 @@ export default defineConfig({
         '@': resolve('src/') // Assuming 'src' is the root for renderer code
       }
     },
+    server: {
+      port: 5173,
+      strictPort: true, // Don't try alternative ports
+      https: false, // Use HTTP instead of HTTPS to avoid SSL issues
+      cors: false,
+      hmr: {
+        protocol: 'ws',
+        host: 'localhost'
+      },
+      proxy: {},
+      watch: {
+        usePolling: true
+      }
+    },
     build: {
       rollupOptions: {
         input: {
-          index: 'src/main.js'
+          index: resolve('index.html') // Use the root index.html
         }
       }
     },
-    plugins: [vue()]
+    plugins: [vue()],
+    root: '.', // Set the root directory to the current directory
+    base: './' // Use relative paths
   }
 }) 

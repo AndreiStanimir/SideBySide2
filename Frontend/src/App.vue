@@ -12,32 +12,69 @@
     <main class="main-content">
       <div v-if="!currentDocument" class="welcome-screen">
         <h2>Welcome to Side by Side Translator</h2>
-        <p>Open a document to get started</p>
+        <p>Open a document to get started with translation</p>
         <button @click="openFile" class="open-file-btn">Open Document</button>
       </div>
       
       <div v-else class="document-workspace">
         <div class="panel pdf-viewer">
-          <div class="panel-header">Original Document</div>
+          <div class="panel-header">
+            <span>Original Document</span>
+            <div class="panel-controls">
+              <button title="Zoom In">+</button>
+              <button title="Zoom Out">-</button>
+              <button title="Next Page">→</button>
+              <button title="Previous Page">←</button>
+            </div>
+          </div>
           <div class="panel-content">
             <!-- PDF Viewer Component will go here -->
-            <p>PDF Viewer Placeholder</p>
+            <p>{{ currentDocument.name }}</p>
+            <div class="pdf-placeholder">PDF Viewer</div>
           </div>
         </div>
         
         <div class="panel translation-memory">
-          <div class="panel-header">Translation Memory</div>
+          <div class="panel-header">
+            <span>Translation Memory</span>
+            <div class="panel-controls">
+              <button title="Search">🔍</button>
+              <button title="Filter">⚙️</button>
+            </div>
+          </div>
           <div class="panel-content">
-            <!-- Translation Memory Component will go here -->
-            <p>Translation Memory Placeholder</p>
+            <div class="search-box">
+              <input type="text" placeholder="Search translation memory..." />
+              <button>Search</button>
+            </div>
+            <div class="segment-list">
+              <div class="segment-item">
+                <div class="source-text">Example source text</div>
+                <div class="target-text">Example target text</div>
+                <div class="match-percent">98%</div>
+              </div>
+              <div class="segment-item">
+                <div class="source-text">Another source text example</div>
+                <div class="target-text">Another target text example</div>
+                <div class="match-percent">85%</div>
+              </div>
+            </div>
           </div>
         </div>
         
         <div class="panel translated-preview">
-          <div class="panel-header">Translated Preview</div>
+          <div class="panel-header">
+            <span>Translated Preview</span>
+            <div class="panel-controls">
+              <button title="Edit Mode">✏️</button>
+              <button title="Preview Mode">👁️</button>
+              <button title="Export">📥</button>
+            </div>
+          </div>
           <div class="panel-content">
-            <!-- Translated Preview Component will go here -->
-            <p>Translated Preview Placeholder</p>
+            <div class="editor-area">
+              <textarea placeholder="Translated content will appear here..."></textarea>
+            </div>
           </div>
         </div>
       </div>
@@ -215,6 +252,7 @@ body {
   overflow: hidden;
   display: flex;
   flex-direction: column;
+  background-color: white;
 }
 
 .panel-header {
@@ -222,12 +260,111 @@ body {
   padding: 10px;
   font-weight: bold;
   border-bottom: 1px solid #ddd;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.panel-controls {
+  display: flex;
+  gap: 5px;
+}
+
+.panel-controls button {
+  background-color: transparent;
+  border: 1px solid #ddd;
+  border-radius: 3px;
+  width: 28px;
+  height: 28px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  cursor: pointer;
+}
+
+.panel-controls button:hover {
+  background-color: #eee;
 }
 
 .panel-content {
   flex: 1;
   overflow: auto;
   padding: 10px;
+}
+
+.search-box {
+  margin-bottom: 10px;
+  display: flex;
+}
+
+.search-box input {
+  flex: 1;
+  padding: 8px;
+  border: 1px solid #ddd;
+  border-radius: 4px 0 0 4px;
+}
+
+.search-box button {
+  padding: 8px 12px;
+  background-color: #3498db;
+  color: white;
+  border: none;
+  border-radius: 0 4px 4px 0;
+  cursor: pointer;
+}
+
+.segment-list {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.segment-item {
+  border: 1px solid #eee;
+  border-radius: 4px;
+  padding: 10px;
+  cursor: pointer;
+}
+
+.segment-item:hover {
+  background-color: #f9f9f9;
+}
+
+.source-text {
+  font-weight: bold;
+  margin-bottom: 5px;
+}
+
+.match-percent {
+  color: #27ae60;
+  font-size: 0.9em;
+  text-align: right;
+}
+
+.editor-area {
+  height: 100%;
+}
+
+.editor-area textarea {
+  width: 100%;
+  height: 100%;
+  min-height: 300px;
+  border: 1px solid #ddd;
+  border-radius: 4px;
+  padding: 10px;
+  resize: none;
+}
+
+.pdf-placeholder {
+  width: 100%;
+  height: 400px;
+  background-color: #f9f9f9;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  font-size: 1.2em;
+  color: #777;
+  border: 1px dashed #ddd;
 }
 
 .app-footer {
@@ -248,7 +385,6 @@ body {
   width: 10px;
   height: 10px;
   border-radius: 50%;
-  display: inline-block;
 }
 
 .status-dot.online {
@@ -260,6 +396,11 @@ body {
 }
 
 .status-dot.unknown {
-  background-color: #f1c40f;
+  background-color: #f39c12;
+}
+
+.app-info {
+  font-size: 0.9em;
+  color: #777;
 }
 </style> 

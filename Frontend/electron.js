@@ -11,6 +11,12 @@ const API_URL = process.env.NODE_ENV === 'development'
   ? 'http://localhost:5000/api' 
   : 'http://localhost:5000/api'; // Should be configurable in production
 
+// Handle certificate errors for development
+if (process.env.NODE_ENV === 'development') {
+  app.commandLine.appendSwitch('ignore-certificate-errors');
+  app.commandLine.appendSwitch('allow-insecure-localhost', 'true');
+}
+
 function createWindow() {
   // Create the browser window
   mainWindow = new BrowserWindow({
@@ -19,9 +25,12 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, 'preload.js')
+      preload: path.join(__dirname, 'preload.js'),
+      // Disable web security in development for easier testing
+      webSecurity: process.env.NODE_ENV !== 'development',
+      allowRunningInsecureContent: process.env.NODE_ENV === 'development'
     },
-    icon: path.join(__dirname, 'build/icon.png'),
+    icon: path.join(__dirname, 'public/icon.png'),
     title: 'Side by Side Translator',
     show: false
   });
@@ -29,7 +38,11 @@ function createWindow() {
   // Load the app entry point
   if (process.env.NODE_ENV === 'development') {
     // In development, load from Vite dev server
-    mainWindow.loadURL('http://localhost:3000');
+    // Dynamically detect the port from process env if available
+    const port = process.env.VITE_DEV_SERVER_PORT || 5173;
+    console.log(`Loading from development server: http://localhost:${port}`);
+    mainWindow.loadURL(`http://localhost:${port}`);
+    
     // Open DevTools in development mode
     mainWindow.webContents.openDevTools();
   } else {

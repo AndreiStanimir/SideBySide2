@@ -5,6 +5,10 @@ const fs = require("fs");
 const axios = require("axios");
 let mainWindow;
 const API_URL = "http://localhost:5000/api";
+{
+  app.commandLine.appendSwitch("ignore-certificate-errors");
+  app.commandLine.appendSwitch("allow-insecure-localhost", "true");
+}
 function createWindow() {
   mainWindow = new BrowserWindow({
     width: 1280,
@@ -12,14 +16,19 @@ function createWindow() {
     webPreferences: {
       nodeIntegration: false,
       contextIsolation: true,
-      preload: path.join(__dirname, "preload.js")
+      preload: path.join(__dirname, "preload.js"),
+      // Disable web security in development for easier testing
+      webSecurity: false,
+      allowRunningInsecureContent: true
     },
-    icon: path.join(__dirname, "build/icon.png"),
+    icon: path.join(__dirname, "public/icon.png"),
     title: "Side by Side Translator",
     show: false
   });
   {
-    mainWindow.loadURL("http://localhost:3000");
+    const port = process.env.VITE_DEV_SERVER_PORT || 5173;
+    console.log(`Loading from development server: http://localhost:${port}`);
+    mainWindow.loadURL(`http://localhost:${port}`);
     mainWindow.webContents.openDevTools();
   }
   mainWindow.on("ready-to-show", () => {

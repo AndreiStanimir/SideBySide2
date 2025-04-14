@@ -15,6 +15,28 @@ import subprocess
 from typing import Dict, List, Optional, Any
 from pathlib import Path
 
+# Debug paths and environment
+print("Python executable:", sys.executable)
+print("PATH:", os.environ.get('PATH', ''))
+print("Current directory:", os.getcwd())
+print("Directory contents:", os.listdir())
+
+# Try to locate ocrmypdf executable
+try:
+    ocrmypdf_path = subprocess.check_output(["which", "ocrmypdf"], text=True).strip()
+    print("ocrmypdf found at:", ocrmypdf_path)
+except subprocess.CalledProcessError:
+    print("ERROR: ocrmypdf not found in PATH")
+    # Try to find it in common locations
+    for path in ["/usr/bin/ocrmypdf", "/usr/local/bin/ocrmypdf", "/opt/bin/ocrmypdf"]:
+        if os.path.exists(path):
+            print(f"Found ocrmypdf at {path}")
+            ocrmypdf_path = path
+            break
+    else:
+        print("ERROR: Could not find ocrmypdf in any standard location")
+        ocrmypdf_path = "ocrmypdf"  # Default, will likely fail if not in PATH
+
 import uvicorn
 from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query
 from fastapi.responses import FileResponse, JSONResponse
@@ -44,6 +66,9 @@ class OCRProcessor:
         # Ensure directories exist
         INPUT_DIR.mkdir(exist_ok=True)
         OUTPUT_DIR.mkdir(exist_ok=True)
+        
+        # Store the path to ocrmypdf
+        self.ocrmypdf_path = ocrmypdf_path
     
     def process_pdf(self, input_file: Path, output_file: Path, language: str = 'eng', 
                     optimize: int = 1, skip_text: bool = False) -> Dict[str, Any]:
@@ -65,7 +90,7 @@ class OCRProcessor:
         try:
             # Build command
             cmd = [
-                "ocrmypdf",
+                self.ocrmypdf_path,
                 f"--language", language,
                 f"--optimize", str(optimize),
             ]
@@ -109,6 +134,11 @@ class OCRProcessor:
 
 # Initialize OCR processor
 ocr_processor = OCRProcessor()
+
+@app.get("/", summary="API Root")
+async def root():
+    """Root endpoint to verify the API is running."""
+    return {"status": "ok", "service": "OCRmyPDF API", "ocrmypdf_path": ocrmypdf_path}
 
 @app.post("/ocr/", summary="Process a PDF file with OCR")
 async def process_pdf(
@@ -227,11 +257,11 @@ def main():
     
     # Check if ocrmypdf is available
     try:
-        result = subprocess.run(["ocrmypdf", "--version"], capture_output=True, text=True)
+        result = subprocess.run([ocrmypdf_path, "--version"], capture_output=True, text=True)
         logger.info(f"OCRmyPDF version: {result.stdout.strip()}")
     except Exception as e:
         logger.error(f"Error checking OCRmyPDF installation: {e}")
-        sys.exit(1)
+        logger.error("Will try to continue anyway...")
     
     # Start the FastAPI server
     uvicorn.run(app, host="0.0.0.0", port=8000)
