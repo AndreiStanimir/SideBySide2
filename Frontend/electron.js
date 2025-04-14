@@ -8,8 +8,8 @@ let mainWindow;
 
 // API endpoint base URL configuration
 const API_URL = process.env.NODE_ENV === 'development' 
-  ? 'http://localhost:5000/api' 
-  : 'http://localhost:5000/api'; // Should be configurable in production
+  ? 'http://localhost:5000' // Remove /api at the end
+  : 'http://localhost:5000'; // Should be configurable in production
 
 // Handle certificate errors for development
 if (process.env.NODE_ENV === 'development') {
@@ -143,9 +143,12 @@ ipcMain.handle('dialog:saveFile', async (event, { fileContent, defaultPath, filt
 // Handler for API requests
 ipcMain.handle('api:request', async (event, { method, endpoint, data, params }) => {
   try {
+    // Make sure endpoint starts with '/' if not already
+    const formattedEndpoint = endpoint.startsWith('/') ? endpoint : `/${endpoint}`;
+    
     const response = await axios({
       method: method || 'get',
-      url: `${API_URL}/${endpoint}`,
+      url: `${API_URL}${formattedEndpoint}`,
       data,
       params
     });
@@ -163,10 +166,27 @@ ipcMain.handle('api:request', async (event, { method, endpoint, data, params }) 
 // Check API server status
 ipcMain.handle('api:status', async () => {
   try {
-    const response = await axios.get(`${API_URL}/health`);
+    // Try multiple possible health endpoints
+    let response;
+    try {
+      response = await axios.get(`${API_URL}/health`);
+    } catch (error) {
+      // If /health fails, try /api/health
+      response = await axios.get(`${API_URL}/api/health`);
+    }
     return { status: 'online', data: response.data };
   } catch (error) {
     console.error('API health check error:', error);
-    return { status: 'offline', error: error.message };
+    
+    // Try a simple ping to see if the server is up at all
+    try {
+      await axios.get(`${API_URL}`);
+      return { 
+        status: 'online', 
+        data: { message: 'API is running but health endpoint not found' } 
+      };
+    } catch (innerError) {
+      return { status: 'offline', error: error.message };
+    }
   }
 }); 

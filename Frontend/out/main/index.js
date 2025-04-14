@@ -4,7 +4,7 @@ const path = require("path");
 const fs = require("fs");
 const axios = require("axios");
 let mainWindow;
-const API_URL = "http://localhost:5000/api";
+const API_URL = "http://localhost:5000";
 {
   app.commandLine.appendSwitch("ignore-certificate-errors");
   app.commandLine.appendSwitch("allow-insecure-localhost", "true");
@@ -101,9 +101,10 @@ ipcMain.handle("dialog:saveFile", async (event, { fileContent, defaultPath, filt
 });
 ipcMain.handle("api:request", async (event, { method, endpoint, data, params }) => {
   try {
+    const formattedEndpoint = endpoint.startsWith("/") ? endpoint : `/${endpoint}`;
     const response = await axios({
       method: method || "get",
-      url: `${API_URL}/${endpoint}`,
+      url: `${API_URL}${formattedEndpoint}`,
       data,
       params
     });
@@ -118,10 +119,23 @@ ipcMain.handle("api:request", async (event, { method, endpoint, data, params }) 
 });
 ipcMain.handle("api:status", async () => {
   try {
-    const response = await axios.get(`${API_URL}/health`);
+    let response;
+    try {
+      response = await axios.get(`${API_URL}/health`);
+    } catch (error) {
+      response = await axios.get(`${API_URL}/api/health`);
+    }
     return { status: "online", data: response.data };
   } catch (error) {
     console.error("API health check error:", error);
-    return { status: "offline", error: error.message };
+    try {
+      await axios.get(`${API_URL}`);
+      return {
+        status: "online",
+        data: { message: "API is running but health endpoint not found" }
+      };
+    } catch (innerError) {
+      return { status: "offline", error: error.message };
+    }
   }
 });

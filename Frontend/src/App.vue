@@ -9,6 +9,11 @@
       </div>
     </header>
     
+    <!-- API Notification -->
+    <div v-if="showApiNotification" class="api-notification">
+      API Connected Successfully!
+    </div>
+    
     <main class="main-content">
       <div v-if="!currentDocument" class="welcome-screen">
         <h2>Welcome to Side by Side Translator</h2>
@@ -99,7 +104,8 @@ export default {
     return {
       currentDocument: null,
       apiStatus: 'unknown', // 'online', 'offline', 'unknown'
-      appVersion: '0.1.0'
+      appVersion: '0.1.0',
+      showApiNotification: false
     }
   },
   computed: {
@@ -149,6 +155,15 @@ export default {
       try {
         const result = await window.api.checkStatus();
         this.apiStatus = result.status;
+        console.log('API Status:', result);
+        
+        // Show a temporary notification about API status
+        if (result.status === 'online') {
+          this.showApiNotification = true;
+          setTimeout(() => {
+            this.showApiNotification = false;
+          }, 3000);
+        }
       } catch (error) {
         this.apiStatus = 'offline';
         console.error('Error checking API status:', error);
@@ -402,5 +417,28 @@ body {
 .app-info {
   font-size: 0.9em;
   color: #777;
+}
+
+.api-notification {
+  position: fixed;
+  top: 70px;
+  right: 20px;
+  background-color: #2ecc71;
+  color: white;
+  padding: 10px 20px;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  z-index: 1000;
+  animation: fadeIn 0.3s, fadeOut 0.5s 2.5s;
+}
+
+@keyframes fadeIn {
+  from { opacity: 0; transform: translateY(-20px); }
+  to { opacity: 1; transform: translateY(0); }
+}
+
+@keyframes fadeOut {
+  from { opacity: 1; transform: translateY(0); }
+  to { opacity: 0; transform: translateY(-20px); }
 }
 </style> 
