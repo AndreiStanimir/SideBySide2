@@ -4,6 +4,7 @@ using SideBySideAPI.Interfaces;
 using SideBySideAPI.Models;
 using SideBySideAPI.Models.DTOs;
 using SideBySideAPI.Models.Responses;
+using Asp.Versioning;
 
 namespace SideBySideAPI.Controllers.v1
 {

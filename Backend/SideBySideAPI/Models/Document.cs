@@ -4,35 +4,49 @@ using System.Text.Json.Serialization;
 
 namespace SideBySideAPI.Models
 {
+    public enum DocumentStatus
+    {
+        Pending,
+        Processing,
+        Processed,
+        Error
+    }
+
     public class Document
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; } = null!;
+        public string Id { get; set; } = string.Empty;
 
         [BsonElement("userId")]
-        public string UserId { get; set; } = null!;
+        public string UserId { get; set; } = string.Empty;
 
         [BsonElement("name")]
-        public string Name { get; set; } = null!;
+        public string Name { get; set; } = string.Empty;
+
+        [BsonElement("fileType")]
+        public string FileType { get; set; } = string.Empty;
+
+        [BsonElement("content")]
+        public byte[] Content { get; set; } = Array.Empty<byte>();
+
+        [BsonElement("status")]
+        public DocumentStatus Status { get; set; }
+
+        [BsonElement("createdAt")]
+        public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
+
+        [BsonElement("updatedAt")]
+        public DateTime UpdatedAt { get; set; } = DateTime.UtcNow;
 
         [BsonElement("originalFileName")]
         public string OriginalFileName { get; set; } = null!;
-
-        [BsonElement("fileType")]
-        public string FileType { get; set; } = null!;
 
         [BsonElement("sourceLanguage")]
         public string SourceLanguage { get; set; } = null!;
 
         [BsonElement("targetLanguage")]
         public string TargetLanguage { get; set; } = null!;
-
-        [BsonElement("createdAt")]
-        public DateTime CreatedAt { get; set; }
-
-        [BsonElement("updatedAt")]
-        public DateTime UpdatedAt { get; set; }
 
         [BsonElement("fileSize")]
         public long FileSize { get; set; }

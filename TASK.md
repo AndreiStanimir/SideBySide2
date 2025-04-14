@@ -20,49 +20,78 @@ A comprehensive task list for implementing the full-stack translation applicatio
 
 - [ ] Establish development environment
   - [ ] Install .NET 9 SDK and runtime
-  - [ ] Set up Node.js environment for Electron/Vue development
-  - [ ] Install Docker Engine and Docker Compose
+  - [x] Set up Node.js environment for Electron/Vue development
+  - [x] Install Docker Engine and Docker Compose
   - [ ] Configure VS Code with recommended extensions
   - [ ] Install MongoDB Community Edition (for local testing)
   - [ ] Install MongoDB Compass for database management
+- [x] Configure containerized services (2024-04-14)
+  - [x] Set up MongoDB container with volumes
+  - [x] Configure OCRmyPDF container with REST API
+  - [x] Create Redis container for caching
+  - [x] Set up container health checks
+  - [x] Configure container logging
+- [ ] Test OCRmyPDF container in WSL
+  - [ ] Run the following commands in WSL:
+    ```bash
+    # Navigate to project directory in WSL
+    cd /mnt/d/repos/SideBySide2/Tesseract
+    
+    # Build the Docker image
+    sudo docker build -t sidebyside-ocrmypdf .
+    
+    # Run the container with port mapping and volume mounting
+    sudo docker run -p 8000:8000 \
+      -v $(pwd)/sample_pdfs:/app/input \
+      sidebyside-ocrmypdf
+    
+    # In another terminal, test the API (after container is running)
+    curl -X POST "http://localhost:8000/ocr/" \
+      -H "accept: application/json" \
+      -H "Content-Type: multipart/form-data" \
+      -F "file=@/mnt/d/repos/SideBySide2/.cursor/rules/OUT_LASTBIL_IC07197231009-print.pdf" \
+      -F "language=eng" \
+      -F "optimize=1" \
+      -F "skip_text=false"
+    ```
 
 ## Future Tasks
 
 ### Backend Development (High Priority)
 
 - [ ] Create .NET 9 API project
-  - [ ] Set up project structure with Clean Architecture
-  - [ ] Configure API endpoints routing
-  - [ ] Set up dependency injection
-  - [ ] Add authentication middleware
-  - [ ] Create Docker container for API development
+  - [x] Set up project structure with Clean Architecture
+  - [x] Configure API endpoints routing
+  - [x] Set up dependency injection
+  - [x] Add authentication middleware
+  - [x] Create Docker container for API development
 - [ ] Implement PDF processing
   - [ ] Research and integrate PDF library for .NET
   - [ ] Create PDF to DOC/DOCX conversion service
-  - [ ] Implement Tesseract OCR integration in container
+  - [x] Implement OCRmyPDF integration in container
   - [ ] Add text extraction functionality
-  - [ ] Configure OCR processing container
+  - [x] Configure OCR processing container with REST API
 - [ ] Develop translation memory system
-  - [ ] Design MongoDB schema for translation segments
-  - [ ] Create repository layer for data access
+  - [x] Design MongoDB schema for translation segments
+  - [x] Create repository layer for data access
   - [ ] Implement text segmentation algorithm
   - [ ] Add CRUD operations for translation memory
-  - [ ] Set up MongoDB container with persistence
+  - [x] Set up MongoDB container with persistence
 
 ### Infrastructure Setup (High Priority)
 
-- [ ] Configure containerized services
-  - [ ] Set up MongoDB container with volumes
-  - [ ] Configure Tesseract OCR container
-  - [ ] Create Redis container for caching
-  - [ ] Set up container health checks
-  - [ ] Configure container logging
-- [ ] Establish development workflow
-  - [ ] Configure hot-reload for development containers
-  - [ ] Set up volume mappings for code changes
+- [x] Establish development workflow
+  - [x] Configure hot-reload for development containers
+  - [x] Set up volume mappings for code changes
   - [ ] Create development helper scripts
   - [ ] Document container development process
   - [ ] Configure debugging in containers
+- [ ] Test and optimize OCRmyPDF container
+  - [ ] Test OCRmyPDF with various PDF types
+  - [ ] Optimize processing parameters
+  - [ ] Add support for additional languages
+  - [ ] Create container monitoring
+  - [ ] Develop frontend integration with the OCR API
 
 ### Frontend Development (High Priority)
 
@@ -81,7 +110,7 @@ A comprehensive task list for implementing the full-stack translation applicatio
   - [ ] Implement text selection and editing
   - [ ] Add zoom and navigation controls
   - [ ] Implement annotation tools
-  - [ ] Connect with containerized OCR service
+  - [ ] Connect with OCRmyPDF service API
 - [ ] Build translation memory UI
   - [ ] Create search interface for TM
   - [ ] Implement filtering and sorting options
@@ -175,14 +204,9 @@ A comprehensive task list for implementing the full-stack translation applicatio
 ### Docker Configuration
 - `/docker-compose.yml` - Service orchestration
 - `/Backend/SideBySideAPI/Dockerfile` - API container configuration
-- `/Tesseract/Dockerfile` - OCR service container setup
+- `/Tesseract/Dockerfile` - OCRmyPDF service container setup
 - `/.dockerignore` - Docker build exclusions
 
 ### Backend Services
 - `/Backend/SideBySideAPI/` - API project directory
-- `/Tesseract/ocr_processing.py` - OCR processing script
-
-### Frontend
-- `/Frontend/package.json` - Frontend dependencies
-- `/Frontend/src/` - Frontend source code
-- `/Frontend/electron.js` - Electron main process 
+- `/Tesseract/ocr_processing.py` - OCR processing script with FastAPI 

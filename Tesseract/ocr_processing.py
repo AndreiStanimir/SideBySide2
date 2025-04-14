@@ -1,7 +1,7 @@
 #!/usr/bin/env python3
 """
 OCR Processing Service for SideBySide Translator Application.
-This service processes PDF documents and images for text extraction.
+This service processes PDF documents using ocrmypdf.
 """
 
 import os
@@ -9,13 +9,15 @@ import sys
 import json
 import time
 import logging
+import shutil
+import uuid
+import subprocess
 from typing import Dict, List, Optional, Any
+from pathlib import Path
 
-import cv2
-import numpy as np
-import pytesseract
-from PIL import Image
-from pdf2image import convert_from_path, convert_from_bytes
+import uvicorn
+from fastapi import FastAPI, File, UploadFile, HTTPException, BackgroundTasks, Query
+from fastapi.responses import FileResponse, JSONResponse
 
 # Configure logging
 logging.basicConfig(
@@ -23,142 +25,216 @@ logging.basicConfig(
     format='%(asctime)s - %(name)s - %(levelname)s - %(message)s',
     handlers=[logging.StreamHandler()]
 )
-logger = logging.getLogger('ocr-service')
+logger = logging.getLogger('ocrmypdf-service')
+
+# Initialize FastAPI app
+app = FastAPI(title="OCRmyPDF Service", description="OCR service for the SideBySide Translator Application")
+
+# Define input and output directories
+INPUT_DIR = Path("/app/input")
+OUTPUT_DIR = Path("/app/output")
 
 class OCRProcessor:
-    """OCR Processor for PDF and image documents."""
+    """OCR Processor for PDF documents using ocrmypdf."""
     
-    def __init__(self, language: str = 'eng') -> None:
+    def __init__(self) -> None:
+        """Initialize OCR processor."""
+        logger.info("OCR Processor initialized")
+        
+        # Ensure directories exist
+        INPUT_DIR.mkdir(exist_ok=True)
+        OUTPUT_DIR.mkdir(exist_ok=True)
+    
+    def process_pdf(self, input_file: Path, output_file: Path, language: str = 'eng', 
+                    optimize: int = 1, skip_text: bool = False) -> Dict[str, Any]:
         """
-        Initialize OCR processor.
+        Process a PDF document for OCR using ocrmypdf.
         
         Args:
+            input_file: Path to the input PDF file
+            output_file: Path where the OCR'd PDF will be saved
             language: Language code for OCR (default: English)
-        """
-        self.language = language
-        logger.info(f"OCR Processor initialized with language: {language}")
-    
-    def process_pdf(self, pdf_path: str, dpi: int = 300) -> List[Dict[str, Any]]:
-        """
-        Process a PDF document for OCR.
-        
-        Args:
-            pdf_path: Path to the PDF file
-            dpi: DPI for PDF rendering (higher value means better quality but slower processing)
-            
-        Returns:
-            List of dictionaries with OCR results per page
-        """
-        logger.info(f"Processing PDF: {pdf_path}")
-        
-        try:
-            # Convert PDF to images
-            pages = convert_from_path(pdf_path, dpi=dpi)
-            
-            results = []
-            for i, page in enumerate(pages):
-                logger.info(f"Processing page {i+1}/{len(pages)}")
-                
-                # Convert PIL Image to numpy array for OpenCV
-                img_np = np.array(page)
-                
-                # Process the image
-                ocr_result = self._process_image_array(img_np)
-                
-                results.append({
-                    'page': i+1,
-                    'text': ocr_result,
-                    'width': page.width,
-                    'height': page.height
-                })
-            
-            return results
-            
-        except Exception as e:
-            logger.error(f"Error processing PDF: {e}")
-            return []
-    
-    def process_image(self, image_path: str) -> Dict[str, Any]:
-        """
-        Process an image file for OCR.
-        
-        Args:
-            image_path: Path to the image file
+            optimize: Optimization level (0-3)
+            skip_text: Whether to skip pages that already contain text
             
         Returns:
             Dictionary with OCR results
         """
-        logger.info(f"Processing image: {image_path}")
+        logger.info(f"Processing PDF: {input_file} to {output_file}")
         
         try:
-            # Read image with OpenCV
-            img = cv2.imread(image_path)
+            # Build command
+            cmd = [
+                "ocrmypdf",
+                f"--language", language,
+                f"--optimize", str(optimize),
+            ]
             
-            # Process the image
-            ocr_result = self._process_image_array(img)
+            if skip_text:
+                cmd.append("--skip-text")
+                
+            # Add input and output files
+            cmd.extend([str(input_file), str(output_file)])
             
+            # Call ocrmypdf
+            logger.info(f"Running command: {' '.join(cmd)}")
+            start_time = time.time()
+            result = subprocess.run(cmd, capture_output=True, text=True)
+            processing_time = time.time() - start_time
+            
+            # Check result
+            if result.returncode != 0:
+                error_msg = result.stderr.strip()
+                logger.error(f"Error processing PDF: {error_msg}")
+                return {
+                    "success": False,
+                    "error": error_msg,
+                    "processing_time": processing_time
+                }
+                
             return {
-                'text': ocr_result,
-                'width': img.shape[1],
-                'height': img.shape[0]
+                "success": True,
+                "output_file": str(output_file),
+                "processing_time": processing_time,
+                "stdout": result.stdout.strip(),
+                "stderr": result.stderr.strip()
             }
             
         except Exception as e:
-            logger.error(f"Error processing image: {e}")
-            return {'text': '', 'width': 0, 'height': 0}
+            logger.error(f"Exception processing PDF: {e}")
+            return {
+                "success": False,
+                "error": str(e)
+            }
+
+# Initialize OCR processor
+ocr_processor = OCRProcessor()
+
+@app.post("/ocr/", summary="Process a PDF file with OCR")
+async def process_pdf(
+    background_tasks: BackgroundTasks,
+    file: UploadFile = File(...),
+    language: str = Query("eng", description="OCR language code"),
+    optimize: int = Query(1, ge=0, le=3, description="Optimization level (0-3)"),
+    skip_text: bool = Query(False, description="Skip pages that already contain text")
+):
+    """
+    Process a PDF file with OCR and return a unique job ID.
+    The processing happens in the background.
+    """
+    if not file.filename.lower().endswith('.pdf'):
+        raise HTTPException(status_code=400, detail="Only PDF files are supported")
     
-    def _process_image_array(self, img_array: np.ndarray) -> str:
-        """
-        Process a numpy image array with OCR.
-        
-        Args:
-            img_array: Numpy array representing the image
-            
-        Returns:
-            Extracted text
-        """
-        # Convert to grayscale if it's a color image
-        if len(img_array.shape) == 3:
-            gray = cv2.cvtColor(img_array, cv2.COLOR_BGR2GRAY)
-        else:
-            gray = img_array
-        
-        # Apply some preprocessing to improve OCR accuracy
-        # Threshold the image
-        _, thresh = cv2.threshold(gray, 0, 255, cv2.THRESH_BINARY + cv2.THRESH_OTSU)
-        
-        # Noise removal
-        kernel = np.ones((1, 1), np.uint8)
-        opening = cv2.morphologyEx(thresh, cv2.MORPH_OPEN, kernel, iterations=1)
-        
-        # Perform OCR
-        text = pytesseract.image_to_string(opening, lang=self.language)
-        
-        return text.strip()
+    # Generate a unique job ID
+    job_id = str(uuid.uuid4())
+    
+    # Save the uploaded file
+    input_path = INPUT_DIR / f"{job_id}.pdf"
+    output_path = OUTPUT_DIR / f"{job_id}.pdf"
+    
+    with open(input_path, "wb") as buffer:
+        shutil.copyfileobj(file.file, buffer)
+    
+    # Process PDF in background
+    background_tasks.add_task(
+        process_pdf_task, 
+        job_id=job_id,
+        input_path=input_path,
+        output_path=output_path,
+        language=language,
+        optimize=optimize,
+        skip_text=skip_text
+    )
+    
+    return {"job_id": job_id, "status": "processing"}
+
+async def process_pdf_task(job_id: str, input_path: Path, output_path: Path, 
+                          language: str, optimize: int, skip_text: bool):
+    """Background task to process PDF files"""
+    logger.info(f"Starting background processing for job {job_id}")
+    
+    result = ocr_processor.process_pdf(
+        input_file=input_path,
+        output_file=output_path,
+        language=language,
+        optimize=optimize,
+        skip_text=skip_text
+    )
+    
+    # Save result to a JSON file for later retrieval
+    result_path = OUTPUT_DIR / f"{job_id}.json"
+    with open(result_path, "w") as f:
+        json.dump(result, f)
+    
+    logger.info(f"Completed processing for job {job_id}")
+
+@app.get("/status/{job_id}", summary="Check the status of an OCR job")
+async def check_status(job_id: str):
+    """Check the status of an OCR job by its ID"""
+    output_path = OUTPUT_DIR / f"{job_id}.pdf"
+    result_path = OUTPUT_DIR / f"{job_id}.json"
+    
+    if result_path.exists():
+        # Job is completed, return results
+        with open(result_path, "r") as f:
+            result = json.load(f)
+        return result
+    
+    if (INPUT_DIR / f"{job_id}.pdf").exists():
+        # Job is in progress
+        return {"job_id": job_id, "status": "processing"}
+    
+    # Job not found
+    raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+
+@app.get("/download/{job_id}", summary="Download a processed PDF file")
+async def download_pdf(job_id: str):
+    """Download a processed PDF file by job ID"""
+    output_path = OUTPUT_DIR / f"{job_id}.pdf"
+    result_path = OUTPUT_DIR / f"{job_id}.json"
+    
+    if not output_path.exists() or not result_path.exists():
+        raise HTTPException(status_code=404, detail=f"Processed file for job {job_id} not found")
+    
+    return FileResponse(
+        path=output_path,
+        filename=f"processed_{job_id}.pdf",
+        media_type="application/pdf"
+    )
+
+@app.delete("/job/{job_id}", summary="Delete a job and its associated files")
+async def delete_job(job_id: str):
+    """Delete a job and its associated files"""
+    input_path = INPUT_DIR / f"{job_id}.pdf"
+    output_path = OUTPUT_DIR / f"{job_id}.pdf"
+    result_path = OUTPUT_DIR / f"{job_id}.json"
+    
+    deleted = False
+    
+    for path in [input_path, output_path, result_path]:
+        if path.exists():
+            path.unlink()
+            deleted = True
+    
+    if not deleted:
+        raise HTTPException(status_code=404, detail=f"Job {job_id} not found")
+    
+    return {"job_id": job_id, "status": "deleted"}
 
 def main():
     """Main function to start the OCR service."""
-    logger.info("Starting OCR processing service")
+    logger.info("Starting OCRmyPDF processing service")
     
-    # This is a placeholder for future REST API or message queue integration
-    # For now, this script can be used directly for processing files
+    # Check if ocrmypdf is available
+    try:
+        result = subprocess.run(["ocrmypdf", "--version"], capture_output=True, text=True)
+        logger.info(f"OCRmyPDF version: {result.stdout.strip()}")
+    except Exception as e:
+        logger.error(f"Error checking OCRmyPDF installation: {e}")
+        sys.exit(1)
     
-    if len(sys.argv) > 1:
-        file_path = sys.argv[1]
-        language = sys.argv[2] if len(sys.argv) > 2 else 'eng'
-        
-        processor = OCRProcessor(language=language)
-        
-        if file_path.lower().endswith('.pdf'):
-            results = processor.process_pdf(file_path)
-            print(json.dumps(results, indent=2))
-        elif file_path.lower().endswith(('.jpg', '.jpeg', '.png', '.tiff', '.tif', '.bmp')):
-            result = processor.process_image(file_path)
-            print(json.dumps(result, indent=2))
-        else:
-            logger.error(f"Unsupported file format: {file_path}")
-    else:
-        logger.info("No file specified. Service is ready for integration.")
+    # Start the FastAPI server
+    uvicorn.run(app, host="0.0.0.0", port=8000)
 
 if __name__ == "__main__":
     main() 

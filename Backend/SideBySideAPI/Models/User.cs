@@ -4,27 +4,32 @@ using System.Text.Json.Serialization;
 
 namespace SideBySideAPI.Models
 {
+    public enum UserRole
+    {
+        User,
+        Admin
+    }
+
     public class User
     {
         [BsonId]
         [BsonRepresentation(BsonType.ObjectId)]
-        public string Id { get; set; } = null!;
+        public string Id { get; set; } = string.Empty;
 
         [BsonElement("username")]
-        public string Username { get; set; } = null!;
+        public string Username { get; set; } = string.Empty;
 
         [BsonElement("email")]
-        public string Email { get; set; } = null!;
+        public string Email { get; set; } = string.Empty;
 
         [BsonElement("passwordHash")]
-        [JsonIgnore]
-        public string PasswordHash { get; set; } = null!;
+        public string PasswordHash { get; set; } = string.Empty;
 
         [BsonElement("firstName")]
-        public string? FirstName { get; set; }
+        public string FirstName { get; set; } = string.Empty;
 
         [BsonElement("lastName")]
-        public string? LastName { get; set; }
+        public string LastName { get; set; } = string.Empty;
 
         [BsonElement("createdAt")]
         public DateTime CreatedAt { get; set; } = DateTime.UtcNow;
@@ -36,7 +41,6 @@ namespace SideBySideAPI.Models
         public DateTime? LastLoginAt { get; set; }
 
         [BsonElement("role")]
-        [JsonConverter(typeof(JsonStringEnumConverter))]
         public UserRole Role { get; set; } = UserRole.User;
 
         [BsonElement("isActive")]
@@ -44,12 +48,6 @@ namespace SideBySideAPI.Models
 
         [BsonElement("preferences")]
         public UserPreferences Preferences { get; set; } = new UserPreferences();
-    }
-
-    public enum UserRole
-    {
-        User,
-        Admin
     }
 
     public class UserPreferences

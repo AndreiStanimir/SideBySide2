@@ -3,12 +3,19 @@ using Microsoft.AspNetCore.Authentication.JwtBearer;
 using Microsoft.IdentityModel.Tokens;
 using Microsoft.OpenApi.Models;
 using SideBySideAPI.Data;
+using SideBySideAPI.Data.Repositories;
 using SideBySideAPI.Interfaces;
 using SideBySideAPI.Middleware;
 using SideBySideAPI.Services;
 using Serilog;
 using FluentValidation.AspNetCore;
+using FluentValidation;
 using Microsoft.AspNetCore.Mvc;
+using Asp.Versioning;
+using Asp.Versioning.ApiExplorer;
+using Microsoft.AspNetCore.Diagnostics.HealthChecks;
+using Microsoft.Extensions.Diagnostics.HealthChecks;
+using HealthChecks.UI.Client;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -23,8 +30,12 @@ Log.Logger = new LoggerConfiguration()
 builder.Host.UseSerilog();
 
 // Add services to the container
-builder.Services.AddControllers()
-    .AddFluentValidation(fv => fv.RegisterValidatorsFromAssemblyContaining<Program>());
+builder.Services.AddControllers();
+
+// Updated FluentValidation setup
+builder.Services.AddFluentValidationAutoValidation();
+builder.Services.AddFluentValidationClientsideAdapters();
+builder.Services.AddValidatorsFromAssemblyContaining<Program>();
 
 // Configure versioning
 builder.Services.AddApiVersioning(options =>
@@ -32,9 +43,13 @@ builder.Services.AddApiVersioning(options =>
     options.DefaultApiVersion = new ApiVersion(1, 0);
     options.AssumeDefaultVersionWhenUnspecified = true;
     options.ReportApiVersions = true;
-});
-
-builder.Services.AddVersionedApiExplorer(options =>
+    options.ApiVersionReader = ApiVersionReader.Combine(
+        new UrlSegmentApiVersionReader(),
+        new HeaderApiVersionReader("x-api-version"),
+        new MediaTypeApiVersionReader("x-api-version"));
+})
+.AddMvc() // Add MVC support
+.AddApiExplorer(options =>
 {
     options.GroupNameFormat = "'v'VVV";
     options.SubstituteApiVersionInUrl = true;
@@ -71,6 +86,20 @@ builder.Services.AddSwaggerGen(c =>
         }
     });
 });
+
+// Add health checks
+builder.Services.AddHealthChecks()
+    .AddCheck("self", () => HealthCheckResult.Healthy())
+    .AddMongoDb(
+        builder.Configuration["MongoDB__ConnectionString"] + "/" + builder.Configuration["MongoDB__DatabaseName"],
+        name: "mongodb",
+        timeout: TimeSpan.FromSeconds(3),
+        tags: new[] { "db", "mongodb" })
+    .AddRedis(
+        builder.Configuration["Redis__ConnectionString"],
+        name: "redis",
+        timeout: TimeSpan.FromSeconds(3),
+        tags: new[] { "cache", "redis" });
 
 // Configure MongoDB
 builder.Services.Configure<MongoDbSettings>(
@@ -147,6 +176,23 @@ app.UseCors("AllowSpecificOrigin");
 
 app.UseAuthentication();
 app.UseAuthorization();
+
+// Map health checks
+app.MapHealthChecks("/health", new HealthCheckOptions
+{
+    Predicate = _ => true,
+    ResponseWriter = UIResponseWriter.WriteHealthCheckUIResponse
+});
+
+app.MapHealthChecks("/health/ready", new HealthCheckOptions
+{
+    Predicate = check => check.Tags.Contains("ready"),
+});
+
+app.MapHealthChecks("/health/live", new HealthCheckOptions
+{
+    Predicate = _ => true,
+});
 
 app.MapControllers();
 
