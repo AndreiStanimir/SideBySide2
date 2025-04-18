@@ -17,6 +17,7 @@ using Microsoft.AspNetCore.Diagnostics.HealthChecks;
 using Microsoft.Extensions.Diagnostics.HealthChecks;
 using HealthChecks.UI.Client;
 using Microsoft.AspNetCore.Authorization;
+using Swashbuckle.AspNetCore.ReDoc;
 
 var builder = WebApplication.CreateBuilder(args);
 
@@ -178,12 +179,32 @@ var app = builder.Build();
 // Configure middleware
 if (app.Environment.IsDevelopment())
 {
+    // Configure Swagger - ensure no custom route template that might interfere
     app.UseSwagger();
+    
     app.UseSwaggerUI(c => 
     {
         c.SwaggerEndpoint("/swagger/v1/swagger.json", "SideBySide Translator API v1");
+        c.RoutePrefix = "swagger";
+        c.InjectStylesheet("/swagger-ui/custom.css");
+        c.InjectJavascript("/swagger-ui/custom.js");
+        c.DefaultModelsExpandDepth(-1); // Hide schemas section by default
     });
+    
+    // Add ReDoc UI as alternative
+    app.UseReDoc(c =>
+    {
+        c.DocumentTitle = "SideBySide API Documentation";
+        c.RoutePrefix = "api-docs";
+        c.SpecUrl = "/swagger/v1/swagger.json";
+    });
+
+    // Add a redirect from the root to Swagger UI
+    app.MapGet("/", () => Results.Redirect("/swagger")).AllowAnonymous();
 }
+
+// Add static files middleware - needed for Swagger UI
+app.UseStaticFiles();
 
 app.UseHttpsRedirection();
 app.UseSerilogRequestLogging();
@@ -210,11 +231,6 @@ app.MapHealthChecks("/health/live", new HealthCheckOptions
 {
     Predicate = _ => true,
 }).AllowAnonymous();
-
-// Configure Swagger endpoints to be accessible without authentication
-app.MapGet("/swagger/{documentName}/swagger.json", (string documentName) => 
-    Results.Redirect($"/swagger/{documentName}/swagger.json"))
-    .AllowAnonymous();
 
 app.MapControllers();
 
